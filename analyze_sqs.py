@@ -55,23 +55,17 @@ class SQS_Analyzer:
 
 
 if __name__=="__main__":
-    run_id=[1,2,3,4,5]
-    alloys=["HEA1","SA1","SA2"]
-    size=["444","666"]
 
-    for r in run_id:
-        for alloy in alloys:
-            for s in size:
-                folder=f"SQS_results/run_{r}/{alloy}/{s}/"
-                scale=3.13275
-                cutoffs = [
-                    2.9229,
-                    3.7816,
-                ]
-                weights=[8,6]
-                sqs_analysis=SQS_Analyzer(folder,scale,cutoffs,weights)
-                sqs_analysis.calculate_all_sros()
-                
-                with open(f"SQS_results/{alloy}_{s}_{r}.json", 'w') as fp:
-                    json.dump(sqs_analysis.all_data, fp, indent=4)
+    folder="./"
+    scale=3.13275
+    cutoffs = [
+        2.9229,
+        3.7816,
+    ]
+    weights=[8,6]
+    sqs_analysis=SQS_Analyzer(folder,scale,cutoffs,weights)
+    sqs_analysis.calculate_all_sros()
+    
+    with open("results.json", 'w') as fp:
+        json.dump(sqs_analysis.all_data, fp, indent=4)
     
