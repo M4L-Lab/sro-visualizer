@@ -249,7 +249,7 @@ def update_interaction_plot(selected_interactions, selected_shell, contents):
                 y='SRO Values', 
                 color='Interaction', 
                 hover_data={'sqs_id': True},  # Add timestamp to the hover data
-                title=f'SRO Values for Selected Interactions ({selected_shell+1}st shell)', 
+                title=f'SRO Values for Selected Interactions (shell : {selected_shell+1})', 
                 markers=True
             )
 
