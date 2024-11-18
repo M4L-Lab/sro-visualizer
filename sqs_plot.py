@@ -55,6 +55,17 @@ app.layout = html.Div([
         clearable=False
     ),
     
+    dcc.Slider(
+    id='r-slider',
+    min=0,
+    max=1,
+    step=0.01,  # Fine-grained steps
+    value=0.1,  # Default value
+    marks={i: str(i) for i in [round(x * 0.1, 1) for x in range(11)]},  # Explicitly include 0 and 1
+    tooltip={"placement": "bottom", "always_visible": True}  # Optional: Show tooltip for value
+
+    ),
+
     # Line plot for interactions vs. sqs_id
     dcc.Graph(id='interaction-sros-plot'),
     # Dropdown to select sqs_id
@@ -67,26 +78,70 @@ app.layout = html.Div([
     # dcc.Graph(id='sros-bar-chart')
 
     # Div to contain plot and table side by side
-    html.Div([
-        # Left column for the spider plot
-        html.Div([
-            dcc.Graph(id='spider-plot',style={'width': '100%', 'height': '700px'})
-        ], style={'width': '60%', 'display': 'inline-block'}),
 
-        # Right column for the table
+    html.Div([
+    # Spider Plot Section with r1 and r2 sliders
+    html.Div([
+        # Sliders for r1 and r2 in two columns
         html.Div([
-            dash_table.DataTable(
-                id='data-table',
-                columns=[{'name': 'Pair', 'id': 'Pair'},
-                         {'name': '1st Shell', 'id': '1st Shell'},
-                         {'name': '2nd Shell', 'id': '2nd Shell'},
-                         {'name': 'Average', 'id': 'Average'}],
-                data=[],  # Data to be dynamically updated
-                style_table={'width': '100%','height': '700px', 'overflowY': 'auto'},
-                style_cell={'textAlign': 'left'},
-            )
-        ], style={'width': '40%', 'display': 'inline-block','padding-top':'200px','padding-left':'0px' })
-    ], style={'display': 'flex'})   
+            html.Div([
+                html.Label("Inner Radius R1 : "),
+                dcc.Input(
+                    id='r1-input',
+                    type='number',
+                    value=-0.5,  # Default value
+                    min=-2,
+                    max=2,
+                    step=0.01  # Step size
+                )
+            ], style={'width': '20%', 'display': 'inline-block', 'padding-right': '2%'}),
+
+            html.Div([
+                html.Label("Outer Radius R2 : "),
+                dcc.Input(
+                    id='r2-input',
+                    type='number',
+                    value=0.5,  # Default value
+                    min=-2,
+                    max=2,
+                    step=0.01  # Step size
+                )
+            ], style={'width': '20%', 'display': 'inline-block'})
+        ], style={'margin-bottom': '20px'}),
+
+        # Spider plot
+        html.Div([
+            dcc.Graph(id='spider-plot', style={'width': '100%', 'height': '700px'})
+        ])
+    ], style={'margin-bottom': '40px'}),  # Space between sections
+
+    # Table Section
+    html.Div([
+    dash_table.DataTable(
+        id='data-table',
+        columns=[
+            {'name': 'Pair', 'id': 'Pair'},
+            {'name': '1st Shell', 'id': '1st Shell'},
+            {'name': '2nd Shell', 'id': '2nd Shell'},
+            {'name': 'Average', 'id': 'Average'}
+        ],
+        data=[],  # Data to be dynamically updated
+        style_table={'width': '80%', 'height': '700px', 'overflowY': 'auto'},
+        style_cell={
+            'textAlign': 'center',  # Align text to center
+            'fontSize': '20px',  # Set font size to 20px
+            'padding': '10px'  # Add padding for better spacing
+        },
+        style_header={
+            'fontSize': '22px',  # Larger font for header
+            'fontWeight': 'bold',  # Bold header text
+            'textAlign': 'center'  # Center-align header
+        }
+    )
+], style={'margin-left': '40px'})
+
+])
+ 
 ])
 
 # Helper function to parse the uploaded JSON file
@@ -135,9 +190,11 @@ def update_controls(contents):
     [Output('spider-plot', 'figure'),
      Output('data-table', 'data')],
     [Input('sqs-id-dropdown', 'value'),
-     State('upload-data', 'contents')]
+    Input('r1-input', 'value'),
+    Input('r2-input', 'value'),
+    State('upload-data', 'contents')]
 )
-def update_spider_chart_and_table(sqs_id, contents):
+def update_spider_chart_and_table(sqs_id,r1,r2, contents):
     if contents is not None and sqs_id is not None:
         df = parse_contents(contents)
         if df is not None:
@@ -161,29 +218,40 @@ def update_spider_chart_and_table(sqs_id, contents):
 
             # Add trace for 1st shell
             fig.add_trace(go.Scatterpolar(
-                r=sros_df['1st Shell'],
-                theta=categories,
+                r=list(sros_df['1st Shell']) + [sros_df['1st Shell'][0]],  # Repeat the first r value at the end
+                theta=categories + [categories[0]],  # Repeat the first theta value at the end
                 opacity=0.9,
                 fill='toself',
+                fillcolor='rgba(135, 206, 250, 0.5)',
                 name='1st Shell'
             ))
 
             # Add trace for 2nd shell
             fig.add_trace(go.Scatterpolar(
-                r=sros_df['2nd Shell'],
-                theta=categories,
+                r=list(sros_df['2nd Shell']) + [sros_df['2nd Shell'][0]],  # Repeat the first r value at the end
+                theta=categories + [categories[0]],  # Repeat the first theta value at the end
                 fill='toself',
+                fillcolor='rgba(240, 128, 128, 0.5)',
                 opacity=0.5,
                 name='2nd Shell'
             ))
 
             # Add trace for Average
             fig.add_trace(go.Scatterpolar(
-                r=sros_df['Average'],
-                theta=categories,
+                r=list(sros_df['Average']) + [sros_df['Average'][0]],  # Repeat the first r value at the end
+                theta=categories + [categories[0]],  # Repeat the first theta value at the end
                 opacity=0.6,
                 fill='toself',
                 name='Average'
+            ))
+
+             # Adding the circle with r = 0
+            fig.add_trace(go.Scatterpolar(
+                r=[0] * (len(categories) + 1),  # All r values are 0
+                theta=categories+[categories[0]],
+                mode='lines',  # Just draw lines
+                line=dict(color='black', dash='dash'),
+                name='Center Circle'
             ))
 
             # Update layout for the radar plot
@@ -191,7 +259,7 @@ def update_spider_chart_and_table(sqs_id, contents):
                 polar=dict(
                     radialaxis=dict(
                         visible=True,
-                        range=[-0.5, 0.5]  # Adjust based on your data range
+                        range=[r1, r2]  # Adjust based on your data range
                     )),
                 title=f'SROs for SQS ID {sqs_id}',
                 showlegend=True,
@@ -215,9 +283,13 @@ def update_spider_chart_and_table(sqs_id, contents):
     Output('interaction-sros-plot', 'figure'),
     [Input('interaction-checklist', 'value'),
      Input('shell-dropdown', 'value'),
+     Input('r-slider', 'value'),
      State('upload-data', 'contents')]
 )
-def update_interaction_plot(selected_interactions, selected_shell, contents):
+def update_interaction_plot(selected_interactions, selected_shell,r_value, contents):
+    shell_labels = {0: '1st shell', 1: '2nd shell', 2: 'Average'}
+    shell_label = shell_labels.get(selected_shell, 'Unknown')  # Retrieve the label
+
     if contents is not None:
         df = parse_contents(contents)
         print(df['time_difference_hours'])
@@ -249,7 +321,7 @@ def update_interaction_plot(selected_interactions, selected_shell, contents):
                 y='SRO Values', 
                 color='Interaction', 
                 hover_data={'sqs_id': True},  # Add timestamp to the hover data
-                title=f'SRO Values for Selected Interactions (shell : {selected_shell+1})', 
+                title=f'SRO Values for Selected Interactions ({shell_label} shell)', 
                 markers=True
             )
 
@@ -259,9 +331,9 @@ def update_interaction_plot(selected_interactions, selected_shell, contents):
                 xref="paper",  # Apply the shape across the entire x-axis range
                 x0=0, x1=1,  # This covers the full range of the x-axis (timestamps)
                 yref="y",  # Use 'y' axis for the vertical positioning
-                y0=-0.02, y1=0.02,  # Set the bounds for the shaded region
+                y0=-r_value, y1=r_value,  # Set the bounds for the shaded region
                 fillcolor="grey",  # You can choose a color here
-                opacity=0.5,  # Set the transparency of the shaded region
+                opacity=0.3,  # Set the transparency of the shaded region
                 layer="above",  # Ensure the shaded region is drawn below the plot lines
                 line_width=0  # No border around the shaded region
             )
