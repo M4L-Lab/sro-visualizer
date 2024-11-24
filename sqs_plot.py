@@ -51,7 +51,7 @@ app.layout = html.Div([
             {'label': '2nd shell', 'value': 1},
             {'label': 'Average', 'value': 2}
         ],
-        value=2,  # Default to 1st shell
+        value=0,  # Default to 1st shell
         clearable=False
     ),
     
@@ -90,8 +90,8 @@ app.layout = html.Div([
                     id='r1-input',
                     type='number',
                     value=-0.5,  # Default value
-                    min=-2,
-                    max=2,
+                    min=-100,
+                    max=100,
                     step=0.01  # Step size
                 )
             ], style={'width': '20%', 'display': 'inline-block', 'padding-right': '2%'}),
@@ -102,8 +102,8 @@ app.layout = html.Div([
                     id='r2-input',
                     type='number',
                     value=0.5,  # Default value
-                    min=-2,
-                    max=2,
+                    min=-100,
+                    max=100,
                     step=0.01  # Step size
                 )
             ], style={'width': '20%', 'display': 'inline-block'})
@@ -287,7 +287,7 @@ def update_spider_chart_and_table(sqs_id,r1,r2, contents):
      State('upload-data', 'contents')]
 )
 def update_interaction_plot(selected_interactions, selected_shell,r_value, contents):
-    shell_labels = {0: '1st shell', 1: '2nd shell', 2: 'Average'}
+    shell_labels = {0: '1st shell', 1: '2nd shell', 2: 'Average 1st-2nd NN shell'}
     shell_label = shell_labels.get(selected_shell, 'Unknown')  # Retrieve the label
 
     if contents is not None:
@@ -321,7 +321,7 @@ def update_interaction_plot(selected_interactions, selected_shell,r_value, conte
                 y='SRO Values', 
                 color='Interaction', 
                 hover_data={'sqs_id': True},  # Add timestamp to the hover data
-                title=f'SRO Values for Selected Interactions ({shell_label} shell)', 
+                title=f'SRO Values for Selected Interactions ({shell_label})', 
                 markers=True
             )
 
